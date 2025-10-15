@@ -5754,12 +5754,121 @@ Udp   протокол для передачі пакета по мережі. �
 
 TCP - медлініше, але перевіряє
 
-
-
-!!!!!!!!!!!!!
-
-
 В процесі передачі все перетворюється в масив байтів
 
 
+
+					Клієнт:
+
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace sync_client
+{
+    class Program
+    {
+        // адрес и порт сервера, к которому будем подключаться
+        static string address = "127.0.0.1"; // адрес сервера
+        static int port = 8080;             // порт сервера 1000....60 000
+        static void Main(string[] args)
+        {
+
+            try
+            {
+                IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse(address), port);
+                IPEndPoint remoteIpPoint = new IPEndPoint(IPAddress.Any, 0);
+
+
+                UdpClient client = new UdpClient();
+                string message = "";
+                while (message != "end")
+                {
+
+                    Console.Write("Enter a message: ");
+                    message = Console.ReadLine()!;
+                    byte[] data = Encoding.Unicode.GetBytes(message);
+
+
+
+                    client.Send(data, data.Length, ipPoint);
+
+                    data = client.Receive(ref remoteIpPoint);
+                    string response = Encoding.Unicode.GetString(data);
+
+                    Console.WriteLine("server response: " + response + " remote : " + remoteIpPoint);
+                }
+
+                client.Close();
+
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+    }
+}
+
+
+
+				Сервер:
+				
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace np_sync_sockets
+{
+    class Program
+    {
+        static string address = "127.0.0.1"; // поточний адрес
+        static int port = 8080;              // порт для приема входящих запросов
+
+        static void Main(string[] args)
+        {
+            // получаем адреса для запуска сокета
+            IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse(address), port);
+
+            // об'єкт для отримання адреси відправника
+
+            IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
+
+            UdpClient listener = new UdpClient(ipPoint);
+            try
+            {
+
+                Console.WriteLine("Server started! Waiting for connection...");
+                while (true)
+                {
+
+                    byte[] data = listener.Receive(ref remoteEndPoint);
+                    string msg = Encoding.Unicode.GetString(data);
+                    Console.WriteLine($"{DateTime.Now.ToShortTimeString()}: {msg} from {remoteEndPoint}");
+
+
+                    string message = "Message was send!";
+                    data = Encoding.Unicode.GetBytes(message);
+
+                    listener.Send(data, data.Length, remoteEndPoint);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+
+            listener.Close();
+        }
+    }
+}
 

@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Net.Sockets;
+using System.Net;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -22,3 +24,4 @@ namespace _01_Client
         }
     }
 }
+
