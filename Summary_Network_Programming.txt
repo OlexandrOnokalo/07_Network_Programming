@@ -5825,7 +5825,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace np_sync_sockets
+namespace _01_Server
 {
     class Program
     {
@@ -5871,4 +5871,11 @@ namespace np_sync_sockets
         }
     }
 }
+
+
+
+
+
+
+
 
