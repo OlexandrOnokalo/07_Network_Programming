@@ -21,6 +21,13 @@
             <Button x:Name="btnSend" Width="80" Height="30" Margin="8,0,0,0">Send</Button>
         </StackPanel>
 
-        <ListBox x:Name="lstDialog" Grid.Row="2" />
+        <ListBox x:Name="lstDialog" Grid.Row="2">
+            <ListBox.Background>
+                <ImageBrush ImageSource="Img/bg.jpg"
+                    Stretch="UniformToFill"
+                    Opacity="0.4"/>
+
+            </ListBox.Background>
+        </ListBox>
     </Grid>
 </Window>
