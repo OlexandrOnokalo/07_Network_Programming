@@ -50,7 +50,7 @@ namespace _01_Server
                             await listener.SendAsync(qData, qData.Length, remote);
                             Console.WriteLine($"Sent question to {remote.Address}:{remote.Port}: \"{question}\"");
 
-                            // Wait for response from same remote endpoint with timeout
+                            
                             var receiveTask = listener.ReceiveAsync();
                             var delayTask = Task.Delay(TimeSpan.FromSeconds(30));
                             var completed = await Task.WhenAny(receiveTask, delayTask);
@@ -63,7 +63,7 @@ namespace _01_Server
                                 {
                                     responses[key] = respMessage;
                                     Console.WriteLine($"Received reply from {respRemote.Address}:{respRemote.Port}: \"{respMessage}\" — saved mapping {key} -> {respMessage}");
-                                    // Optionally send confirmation
+                                    
                                     string conf = $"Saved reply \"{respMessage}\" for \"{message}\"";
                                     byte[] confData = Encoding.Unicode.GetBytes(conf);
                                     await listener.SendAsync(confData, confData.Length, remote);
