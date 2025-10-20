@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "01_Client", "01_Client\01_Client.csproj", "{63F9DD15-2184-440D-AD87-CDFDDC85B822}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "01_Server", "01_Server\01_Server.csproj", "{13B7B88C-9589-497E-B3C9-B43FEF7A9E3C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_ServerApp", "02_ServerApp\02_ServerApp.csproj", "{08DDCE8C-5BEE-48A8-9C99-F40B9BA2967B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_messenger_client", "02_messenger_client\02_messenger_client.csproj", "{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{13B7B88C-9589-497E-B3C9-B43FEF7A9E3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13B7B88C-9589-497E-B3C9-B43FEF7A9E3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13B7B88C-9589-497E-B3C9-B43FEF7A9E3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08DDCE8C-5BEE-48A8-9C99-F40B9BA2967B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08DDCE8C-5BEE-48A8-9C99-F40B9BA2967B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08DDCE8C-5BEE-48A8-9C99-F40B9BA2967B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08DDCE8C-5BEE-48A8-9C99-F40B9BA2967B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
