@@ -12,161 +12,175 @@ namespace _02_messenger_client
 {
     public partial class MainWindow : Window
     {
-        private readonly string _nick;
+        // ====== CONFIG ======
+        private readonly string _serverHost = "127.0.0.1"; // або IP/домен твого сервера
+        private readonly int _serverPort = 9000;           // порт сервера
 
-        private UdpClient _client;
-        private readonly IPEndPoint _serverEndPoint = new IPEndPoint(IPAddress.Loopback, 4040);
-        private volatile bool _listening;
+        // ====== STATE ======
+        private readonly string _nick;
+        private UdpClient _udp;
+        private CancellationTokenSource _cts;
+        private readonly ObservableCollection<string> _messages = new();
 
         public MainWindow(string nick)
         {
             InitializeComponent();
             _nick = nick;
+            Title = $"Chat — {_nick}";
+            _nick = nick ?? string.Empty;
+            MessagesListBox.ItemsSource = _messages;
+            Title = string.IsNullOrWhiteSpace(_nick) ? "Chat" : $"Chat — {_nick}";
+
+        }
+        public MainWindow()
+        {
+            InitializeComponent();
+
 
         }
         private async void JoinButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                _client ??= new UdpClient();
-                _listening = true;
+                if (_udp == null)
+                {
+                    // ОС одразу робить Bind на еферемерний локальний порт
+                    _udp = new UdpClient(0);
 
-                StartListening();
+                    // Фіксуємо адресу сервера (куди слати)
+                    _udp.Connect(_serverHost, _serverPort);
+                }
 
-                
-                await SendRaw($"$<join>|{_nick}");
+                // Стартуємо цикл прийому ОДРАЗУ після Connect
+                _cts?.Cancel();
+                _cts = new CancellationTokenSource();
+                _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
 
-                
-                list.Items.Add($"You ({_nick}) joined the chat.");
+                // Надсилаємо JOIN
+                string join = $"$<join>|{_nick}";
+                byte[] data = Encoding.UTF8.GetBytes(join);
+                await _udp.SendAsync(data, data.Length);
+
+                _messages.Add($"Joined as '{_nick}'.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to join the chat: {ex.Message}",
-                                "Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                MessageBox.Show($"Join error: {ex.Message}", "Network Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        // Надсилання звичайного повідомлення
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            string text = msgText.Text.Trim();
-
-            if (string.IsNullOrEmpty(text))
+            try
             {
-                MessageBox.Show("Message cannot be empty!",
-                                "Warning",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning);
-                return;
+                string msg = MessageTextBox.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(msg))
+                    return;
+
+                string payload = $"{_nick}: {msg}";
+                byte[] data = Encoding.UTF8.GetBytes(payload);
+                await _udp.SendAsync(data, data.Length);
+
+                MessageTextBox.Clear();
             }
-
-
-            await SendRaw($"{_nick}|{text}");
-            msgText.Clear();
+            catch (ObjectDisposedException)
+            {
+                MessageBox.Show("Connection is closed.", "Network",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Send error: {ex.Message}", "Network Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-
+        // LEAVE (відключення)
         private async void LeaveButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                await SendRaw($"$<leave>|{_nick}");
-            }
-            catch { }
-
-            _listening = false;
-            _client?.Dispose();
-            _client = null;
-            list.Items.Add("You left the chat");
-
-
-            this.Close();
+            await LeaveAndCloseAsync(addToLog: true);
         }
-        protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
+
+        // Основний цикл прийому
+        private async Task ReceiveLoopAsync(CancellationToken token)
         {
             try
             {
-                await SendRaw($"$<leave>|{_nick}");
-            }
-            catch { }
+                while (!token.IsCancellationRequested)
+                {
+                    // Тут уже є локальний Bind (бо UdpClient створений з 0)
+                    UdpReceiveResult res = await _udp.ReceiveAsync();
+                    string text = Encoding.UTF8.GetString(res.Buffer);
 
-            _listening = false;
-            _client?.Dispose();
-            _client = null;
+                    // Оновлюємо UI потік
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        _messages.Add(text);
+                        // За бажанням: автопрокрутка ListBox на останнє повідомлення
+                        if (MessagesListBox.Items.Count > 0)
+                            MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]);
+                    });
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // сокет закрито під час завершення — це нормально
+            }
+            catch (SocketException)
+            {
+                // мережеві збої під час закриття — ігноруємо
+            }
+            catch (Exception ex)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                    MessageBox.Show($"Receive error: {ex.Message}", "Network Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+
+        // Акуратне завершення сесії і закриття сокета
+        private async Task LeaveAndCloseAsync(bool addToLog)
+        {
+            try
+            {
+                if (_udp != null)
+                {
+                    // Надішлемо $<leave>|nick (спробуємо; якщо впаде — не страшно)
+                    string leave = $"$<leave>|{_nick}";
+                    byte[] data = Encoding.UTF8.GetBytes(leave);
+                    try { await _udp.SendAsync(data, data.Length); } catch { /* ignore */ }
+                }
+            }
+            catch { /* ignore */ }
+            finally
+            {
+                _cts?.Cancel();
+                _cts = null;
+
+                try { _udp?.Close(); } catch { /* ignore */ }
+                _udp = null;
+
+                if (addToLog)
+                    _messages.Add("Left.");
+            }
+        }
+
+        // На закриття вікна — теж робимо LEAVE
+        protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // щоб діалогів не було під час закриття
+            try
+            {
+                await LeaveAndCloseAsync(addToLog: false);
+            }
+            catch { /* ignore */ }
 
             base.OnClosing(e);
         }
-
-
-
-        private async Task SendRaw(string payload)
-        {
-            try
-            {
-                
-                _client ??= new UdpClient();
-
-                byte[] data = Encoding.UTF8.GetBytes(payload);
-                await _client.SendAsync(data, data.Length, _serverEndPoint);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to send message: {ex.Message}",
-                                "Network Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
-            }
-        }
-        private void StartListening()
-        {
-            _client ??= new UdpClient();
-            _listening = true;
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    while (_listening)
-                    {
-                        
-                        UdpReceiveResult res = await _client.ReceiveAsync();
-                        string raw = Encoding.UTF8.GetString(res.Buffer);
-
-
-                        if (raw.Contains('|'))
-                        {
-                            var parts = raw.Split('|', 2);
-                            string nick = parts[0];
-                            string text = parts.Length > 1 ? parts[1] : string.Empty;
-
-
-                            Dispatcher.Invoke(() =>
-                            {
-                                
-                                list.Items.Add($"{nick}: {text}");
-                            });
-                        }
-                        else
-                        {
-                            Dispatcher.Invoke(() =>
-                            {
-                                
-                                list.Items.Add(raw); 
-                            });
-                        }
-                    }
-                }
-
-                catch (Exception ex)
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        MessageBox.Show($"Receive error: {ex.Message}", "Network Error",
-                                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    });
-                }
-            });
-        }
+    }
+}
 
 
 

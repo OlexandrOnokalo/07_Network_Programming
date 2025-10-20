@@ -32,15 +32,22 @@ namespace _02_messenger_client
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
-            Nick = txtNick.Text.Trim();
-            DialogResult = true; 
-            Close();
+            var nick = (txtNick.Text ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(nick))
+            {
+                MessageBox.Show("Nickname cannot be empty.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            Nick = nick;
+            DialogResult = true;   // <-- це закриє діалог автоматично
+                                   // Close();            // не потрібно, DialogResult вже закриває
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
-            Close();
+            DialogResult = false;  // акуратно закриває діалог
         }
     }
 }

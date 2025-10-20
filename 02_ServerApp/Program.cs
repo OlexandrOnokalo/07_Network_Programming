@@ -59,7 +59,7 @@ namespace _02_ServerApp
         static void Main(string[] args)
         {
             //string ip
-
+            Console.OutputEncoding = Encoding.UTF8;
             Server server = new Server();
             server.Start();
 
