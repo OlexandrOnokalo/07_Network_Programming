@@ -1,22 +1,20 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-
-
 
 namespace _02_messenger_client
 {
     public partial class MainWindow : Window
     {
-        // ====== CONFIG ======
-        private readonly string _serverHost = "127.0.0.1"; // або IP/домен твого сервера
+        // ===== CONFIG =====
+        private readonly string _serverHost = "127.0.0.1"; // IP/домен сервера
         private readonly int _serverPort = 9000;           // порт сервера
 
-        // ====== STATE ======
+        // ===== STATE =====
         private readonly string _nick;
         private UdpClient _udp;
         private CancellationTokenSource _cts;
@@ -25,33 +23,28 @@ namespace _02_messenger_client
         public MainWindow(string nick)
         {
             InitializeComponent();
-            _nick = nick;
-            Title = $"Chat — {_nick}";
+
             _nick = nick ?? string.Empty;
-            MessagesListBox.ItemsSource = _messages;
             Title = string.IsNullOrWhiteSpace(_nick) ? "Chat" : $"Chat — {_nick}";
 
+            // У тебе в XAML: <ListBox x:Name="list" ItemsSource="{Binding}">
+            // Тому підв'язуємо всю колекцію через DataContext:
+            DataContext = _messages;
         }
-        public MainWindow()
-        {
-            InitializeComponent();
 
-
-        }
+        // JOIN
         private async void JoinButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (_udp == null)
                 {
-                    // ОС одразу робить Bind на еферемерний локальний порт
+                    // ОС одразу робить Bind на локальний еферемерний порт
                     _udp = new UdpClient(0);
-
-                    // Фіксуємо адресу сервера (куди слати)
                     _udp.Connect(_serverHost, _serverPort);
                 }
 
-                // Стартуємо цикл прийому ОДРАЗУ після Connect
+                // Старт прийому після Connect
                 _cts?.Cancel();
                 _cts = new CancellationTokenSource();
                 _ = Task.Run(() => ReceiveLoopAsync(_cts.Token));
@@ -62,6 +55,9 @@ namespace _02_messenger_client
                 await _udp.SendAsync(data, data.Length);
 
                 _messages.Add($"Joined as '{_nick}'.");
+                // Автопрокрутка ListBox на останній елемент:
+                if (list.Items.Count > 0)
+                    list.ScrollIntoView(list.Items[^1]);
             }
             catch (Exception ex)
             {
@@ -70,12 +66,12 @@ namespace _02_messenger_client
             }
         }
 
-        // Надсилання звичайного повідомлення
+        // SEND
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                string msg = MessageTextBox.Text?.Trim();
+                string msg = msgText.Text?.Trim();
                 if (string.IsNullOrWhiteSpace(msg))
                     return;
 
@@ -83,7 +79,7 @@ namespace _02_messenger_client
                 byte[] data = Encoding.UTF8.GetBytes(payload);
                 await _udp.SendAsync(data, data.Length);
 
-                MessageTextBox.Clear();
+                msgText.Clear();
             }
             catch (ObjectDisposedException)
             {
@@ -97,40 +93,37 @@ namespace _02_messenger_client
             }
         }
 
-        // LEAVE (відключення)
+        // LEAVE (кнопка)
         private async void LeaveButton_Click(object sender, RoutedEventArgs e)
         {
             await LeaveAndCloseAsync(addToLog: true);
         }
 
-        // Основний цикл прийому
+        // Прийом у циклі
         private async Task ReceiveLoopAsync(CancellationToken token)
         {
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-                    // Тут уже є локальний Bind (бо UdpClient створений з 0)
-                    UdpReceiveResult res = await _udp.ReceiveAsync();
-                    string text = Encoding.UTF8.GetString(res.Buffer);
+                    var res = await _udp.ReceiveAsync();               // сокет уже прив'язаний
+                    string text = Encoding.UTF8.GetString(res.Buffer); // UTF-8
 
-                    // Оновлюємо UI потік
                     await Dispatcher.InvokeAsync(() =>
                     {
                         _messages.Add(text);
-                        // За бажанням: автопрокрутка ListBox на останнє повідомлення
-                        if (MessagesListBox.Items.Count > 0)
-                            MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]);
+                        if (list.Items.Count > 0)
+                            list.ScrollIntoView(list.Items[^1]);
                     });
                 }
             }
             catch (ObjectDisposedException)
             {
-                // сокет закрито під час завершення — це нормально
+                // закрито при виході — ок
             }
             catch (SocketException)
             {
-                // мережеві збої під час закриття — ігноруємо
+                // мережевий збій під час закриття — ок
             }
             catch (Exception ex)
             {
@@ -140,14 +133,13 @@ namespace _02_messenger_client
             }
         }
 
-        // Акуратне завершення сесії і закриття сокета
+        // Акуратне завершення
         private async Task LeaveAndCloseAsync(bool addToLog)
         {
             try
             {
                 if (_udp != null)
                 {
-                    // Надішлемо $<leave>|nick (спробуємо; якщо впаде — не страшно)
                     string leave = $"$<leave>|{_nick}";
                     byte[] data = Encoding.UTF8.GetBytes(leave);
                     try { await _udp.SendAsync(data, data.Length); } catch { /* ignore */ }
@@ -163,33 +155,19 @@ namespace _02_messenger_client
                 _udp = null;
 
                 if (addToLog)
+                {
                     _messages.Add("Left.");
+                    if (list.Items.Count > 0)
+                        list.ScrollIntoView(list.Items[^1]);
+                }
             }
         }
 
-        // На закриття вікна — теж робимо LEAVE
+        // На закриття вікна — теж шлемо LEAVE
         protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            // щоб діалогів не було під час закриття
-            try
-            {
-                await LeaveAndCloseAsync(addToLog: false);
-            }
-            catch { /* ignore */ }
-
+            try { await LeaveAndCloseAsync(addToLog: false); } catch { }
             base.OnClosing(e);
         }
-    }
-}
-
-
-
-
-
-
-
-
-
-
     }
 }
