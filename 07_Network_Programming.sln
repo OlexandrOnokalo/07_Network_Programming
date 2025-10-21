@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_ServerApp", "02_ServerAp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "02_messenger_client", "02_messenger_client\02_messenger_client.csproj", "{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "03_Client", "03_Client\03_Client.csproj", "{FECD14C4-1FA1-43A0-AA9B-A2752B9AA474}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "03_ServerApp", "03_ServerApp\03_ServerApp.csproj", "{C071FF98-2168-4E72-939C-847A4FC9E4E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD4D2E39-FC71-4FF3-A96F-E83DF20F6ABC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FECD14C4-1FA1-43A0-AA9B-A2752B9AA474}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FECD14C4-1FA1-43A0-AA9B-A2752B9AA474}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FECD14C4-1FA1-43A0-AA9B-A2752B9AA474}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FECD14C4-1FA1-43A0-AA9B-A2752B9AA474}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C071FF98-2168-4E72-939C-847A4FC9E4E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C071FF98-2168-4E72-939C-847A4FC9E4E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C071FF98-2168-4E72-939C-847A4FC9E4E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C071FF98-2168-4E72-939C-847A4FC9E4E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
