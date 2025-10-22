@@ -1,0 +1,30 @@
+﻿using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace MailWindow
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        public string Login { get; set; }
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoginWindow loginWindow = new LoginWindow(Login);  
+            if( loginWindow.ShowDialog()== true)
+            {
+                MessageBox.Show(Login);
+            }
+        }
+    }
+}

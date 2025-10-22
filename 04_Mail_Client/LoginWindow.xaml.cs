@@ -1,0 +1,57 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace _04_Mail_Client
+{
+    /// <summary>
+    /// Interaction logic for LoginWindow.xaml
+    /// </summary>
+    public partial class LoginWindow : Window
+    {
+        public string Login { get; set; }
+
+        public string Password { get; set; }
+
+        private string rightlogin = "lenailyshun@gmail.com";
+        private string rightpassword = "dqmq yyqu uxfb ikfc";
+
+        public LoginWindow()
+        {
+            InitializeComponent();
+            login.Text = rightlogin;
+            password.Text = rightpassword;
+        }
+
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Login = login.Text;
+            Password = password.Text;
+
+            if (Login == rightlogin && Password == rightpassword)
+            {
+                DialogResult = true;  
+                Close();
+            }
+            else
+            {
+                MessageBox.Show("Wrong credentials");
+            }
+  
+
+
+        }
+    }
+}

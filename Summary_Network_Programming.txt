@@ -5750,6 +5750,25 @@ if  resalt.IsComlited = true   - покаже тру коли всі таски 
                                   __/ |
                                  |___/
 
+
++-------------------------+----------------------------+
+| TCP                     | UDP                        |
++-------------------------+----------------------------+
+| Захищений               | Небезпечний                |
+| Орієнтований на зєднання| Без встановлення з’єднання |
+| Повільний               | Швидкий                    |
+| Гарантована доставка    | Без гарантій доставки      |
+| Критичні застосунки     | Реальний час               |
+| Є порядок пакетів       | Немає порядку пакетів      |
+| Є керування потоком     | Немає керування потоком    |
+| Розширена перевірка     | Базова перевірка (checksum)|
+| Інфа про пакет 20 байт  | Інфа про пакет 8 байт      |    
+| Є підтвердження (ACK)   | Без підтверджень           |
+| Триетапне рукостискання | Без рукостискання          |
+| DNS, HTTPS, FTP, SMTP…  | DNS, DHCP, TFTP, SNMP…     |
++-------------------------+----------------------------+
+
+
 Udp   протокол для передачі пакета по мережі. Він просто пакети кідає, не перевіряючи чи вони дойшли, зато швидко
 
 TCP - медлініше, але перевіряє
@@ -5880,8 +5899,347 @@ namespace _01_Server
 Мессенджер сервер + клієнти
 
 
+========================================================
+03_ TPC
+
+Що таке TCP (дуже коротко)
+
+TCP — потокоорієнтований (stream), надійний, із гарантією доставки, порядку і без дублювань.
+
+UDP — датаграми (пакети), без гарантій. Для чату/запит-відповідь (як у тебе) — TCP.
+
+Потік, сокети і фреймінг
+
+TCP дає безперервний байтовий потік. Нема «повідомлень» за замовчуванням.
+
+Потрібен власний фреймінг: найпростіше — рядок + \n і читати ReadLine() / писати WriteLine().
+
+У C#: TcpListener приймає з’єднання → TcpClient.GetStream() дає NetworkStream.
+
+Зручно обгорнути NetworkStream у StreamReader/StreamWriter (UTF-8, AutoFlush = true).
+
+Мінімум, який треба в сервері
+
+Підняти слухач: TcpListener(IP, Port).Start().
+
+Прийняти 1 клієнта (у твоїй задачі): AcceptTcpClient().
+
+Отримати потік: client.GetStream().
+
+Читати рядок → обробляти → відповідати рядком у циклі.
+
+Реагувати на розрив (якщо ReadLineAsync() повернув null — клієнт закрився).
+
+Закрити StreamReader/Writer/Client, зупинити Listener.
 
 
 
 
-Нужно исправить вылет приложения поссле ввода никнейма. Так же сделать чтоб в консоли на сервере, и в окне чата другого запусченого мессенжера все выводилось красиво. (Место $<join>|{_nick} показывало подключился такой то ник. *Делай минимум правок кода, что уже готов!!!!!!!*. Реализуй правки и выгрузи мне сюда архивом папки с файлами проектов, чтоб я мог просто скопировать и запустить у себя. think harder
+		Скелет сервера (одноклієнтний, .NET 8):
+
+using System.Net;                        // IPAddress, IPEndPoint
+using System.Net.Sockets;               // TcpListener, TcpClient
+using System.Text;                      // Encoding для UTF-8
+using System.Linq;                      // Для Any/All у валідації (за потреби)
+
+namespace DemoServer
+{
+    internal class Program
+    {
+        private const string BindIp = "127.0.0.1"; // Адреса, на якій слухаємо (локальна машина)
+        private const int Port = 4040;             // Порт сервера
+
+        static async Task Main(string[] args)      // Точка входу; async для await I/O
+        {
+            Console.OutputEncoding = Encoding.UTF8;                         // Коректне виведення символів у консолі
+            var listener = new TcpListener(IPAddress.Parse(BindIp), Port);  // Створюємо TCP-слухач на IP+порт
+            listener.Start();                                               // Починаємо слухати вхідні підключення
+            Console.WriteLine($"Server listening on {BindIp}:{Port}");      // Інформуємо користувача
+
+            using TcpClient client = listener.AcceptTcpClient();            // Блокуємося, поки один клієнт не підключиться
+            Console.WriteLine($"Client connected: {client.Client.RemoteEndPoint}"); // Лог підключення
+
+            using NetworkStream ns = client.GetStream();                    // Отримуємо мережевий потік TCP
+            using var reader = new StreamReader(ns, Encoding.UTF8, leaveOpen: true); // Обгортка для читання рядків (UTF-8)
+            using var writer = new StreamWriter(ns, Encoding.UTF8, leaveOpen: true)  // Обгортка для запису рядків (UTF-8)
+            { AutoFlush = true };                                           // Автоочищення буфера після кожного WriteLine
+
+            try                                                             // Основний цикл обробки запитів
+            {
+                while (true)                                                // Працюємо, доки клієнт не закриє з’єднання
+                {
+                    string? line = await reader.ReadLineAsync();            // Чекаємо рядок від клієнта (фреймінг по \n)
+                    if (line is null) break;                                // null → клієнт закрив з’єднання
+
+                    string normalized = Normalize(line);                    // Нормалізуємо вхід (trim + Upper)
+                    string response = Handle(normalized);                   // Бізнес-логіка (валидація/lookup/формування відповіді)
+
+                    await writer.WriteLineAsync(response);                  // Відправляємо відповідь рядком (із \n)
+                    Console.WriteLine($"Request: '{line}' -> '{response}'"); // Лог запиту/відповіді на сервері
+                }
+            }
+            catch (IOException)                                             // Раптовий обрив з’єднання/помилка I/O
+            {
+                // Для навчального прикладу: тихо ідемо у finally
+            }
+            finally
+            {
+                listener.Stop();                                            // Зупиняємо слухач (звільняємо порт)
+                Console.WriteLine("Server stopped.");                        // Лог завершення
+            }
+        }
+
+        private static string Normalize(string input)                        // Допоміжна нормалізація рядка
+        {
+            return (input ?? string.Empty).Trim().ToUpperInvariant();       // Прибираємо пробіли + у верхній регістр
+        }
+
+        private static string Handle(string input)                           // Місце для твоєї логіки
+        {
+            // ⬇️ Приклад: перевіримо, що рівно 2 латинські літери; інакше Unknown
+            if (input.Length != 2) return "Unknown";                         // Має бути рівно 2 символи
+            if (!IsLatinUpper(input[0]) || !IsLatinUpper(input[1]))          // Перевірка на [A..Z]
+                return "Unknown";
+
+            // Тут міг би бути словник/БД/алгоритм — поки повернемо заглушку
+            // return Regions.TryGetValue(input, out var region) ? region : "Unknown";
+            return "OK";                                                     // Заглушка відповіді (замінюй на свою)
+        }
+
+        private static bool IsLatinUpper(char c)                              // Перевірка: велика латинська літера
+            => c is >= 'A' and <= 'Z';
+    }
+}
+
+
+Мінімум, який треба в клієнті
+
+Підключитись: TcpClient.ConnectAsync("127.0.0.1", 4040).
+
+Отримати потік і обгортки: StreamReader/StreamWriter.
+
+В циклі: взяти введення, WriteLineAsync(input) → ReadLineAsync() → показати відповідь.
+
+Команда exit — вийти локально, не шлемо на сервер.
+
+Закрити ресурси (using усе закриє сам).
+
+Скелет клієнта (.NET 8):
+
+using System.Net.Sockets;                // TcpClient для підключення
+using System.Text;                       // Encoding для UTF-8
+
+namespace DemoClient
+{
+    internal class Program
+    {
+        private const string ServerIp = "127.0.0.1"; // Адреса сервера (локальна)
+        private const int ServerPort = 4040;         // Порт сервера
+
+        static async Task Main(string[] args)        // Точка входу; async для зручного await I/O
+        {
+            Console.OutputEncoding = Encoding.UTF8;  // Щоб консоль коректно показувала символи
+            Console.WriteLine("Type two-letter code (e.g., BK) or 'exit' to quit."); // Інструкція для користувача
+
+            using var client = new TcpClient();      // Створюємо TCP-клієнт; using закриє сокет автоматично
+            await client.ConnectAsync(ServerIp, ServerPort); // Асинхронно підключаємось до сервера
+
+            using NetworkStream ns = client.GetStream();    // Беремо мережевий потік TCP
+            using var reader = new StreamReader(ns, Encoding.UTF8, leaveOpen: true); // Читач рядків (UTF-8)
+            using var writer = new StreamWriter(ns, Encoding.UTF8, leaveOpen: true)  // Писач рядків (UTF-8)
+            { AutoFlush = true };                           // Автоматичний Flush після кожного WriteLine
+
+            while (true)                                    // Основний цикл взаємодії з користувачем
+            {
+                Console.Write("> ");                        // Промпт
+                string? input = Console.ReadLine();         // Читаємо введення користувача з консолі
+                if (input is null) break;                   // EOF (Ctrl+Z) → виходимо
+                input = input.Trim();                       // Прибираємо пробіли
+
+                if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
+                    break;                                  // Команда на вихід — розриваємо цикл без відправки
+
+                await writer.WriteLineAsync(input);         // Надсилаємо рядок на сервер (фреймінг: \n наприкінці)
+                string? response = await reader.ReadLineAsync(); // Читаємо відповідь рядком (чекаємо \n)
+                if (response is null)                       // Якщо сервер закрив з’єднання
+                {
+                    Console.WriteLine("Server closed connection."); // Повідомляємо і...
+                    break;                                   // ...виходимо з циклу
+                }
+
+                Console.WriteLine(response);                // Показуємо відповідь у консоль
+            }
+            // Вихід із using-блоків закриє потік і сокет автоматично
+        }
+    }
+}
+
+
+Часті граблі (і як не наступити)
+
+Немає \n у повідомленні → ReadLine() на іншому боці висить. Рішення: завжди WriteLine(...) + AutoFlush = true.
+
+Зависання UI/блокування → у GUI завжди ConnectAsync/ReadLineAsync/WriteLineAsync. (У консолі — теж звично.)
+
+Розрив з’єднання: ReadLineAsync() повертає null — виходимо з циклу без винятків.
+
+Кодування: узгоджене UTF-8 на обох сторонах.
+
+Єдиний клієнт: якщо треба більше — обгортаєш кожен AcceptTcpClient() у Task.Run(HandleClient) і далі такий самий цикл.
+
+
++-------------------------+----------------------------+
+| TCP                     | UDP                        |
++-------------------------+----------------------------+
+| Захищений               | Небезпечний                |
+| Орієнтований на зєднання| Без встановлення з’єднання |
+| Повільний               | Швидкий                    |
+| Гарантована доставка    | Без гарантій доставки      |
+| Критичні застосунки     | Реальний час               |
+| Є порядок пакетів       | Немає порядку пакетів      |
+| Є керування потоком     | Немає керування потоком    |
+| Розширена перевірка     | Базова перевірка (checksum)|
+| Інфа про пакет 20 байт  | Інфа про пакет 8 байт      |    
+| Є підтвердження (ACK)   | Без підтверджень           |
+| Триетапне рукостискання | Без рукостискання          |
+| DNS, HTTPS, FTP, SMTP…  | DNS, DHCP, TFTP, SNMP…     |
++-------------------------+----------------------------+
+
+===========================
+        TCP (з'єднання)
+===========================
+
+   Sender                          Receiver
+     |                                 |
+     | -------- SYN ------------------> |   // 1. Запит на встановлення з'єднання
+     | <------- SYN + ACK ------------- |   // 2. Підтвердження прийому і запит
+     | -------- ACK ------------------> |   // 3. Остаточне підтвердження
+     |                                 |
+     |==== З'єднання встановлено ====>>|
+     |                                 |
+     | <---- Дані передаються ----->   |
+
+(Триетапне рукостискання: SYN → SYN/ACK → ACK)
+
+
+===========================
+         UDP (без з'єднання)
+===========================
+
+   Sender                          Receiver
+     |                                 |
+     | ===== REQUEST ========>          // Запит
+     | <==== RESPONSE =======           // Відповідь 1
+     | <==== RESPONSE =======           // Відповідь 2
+     | <==== RESPONSE =======           // Відповідь 3
+     |                                 |
+
+(Жодного рукостискання, просто надсилання пакетів)
+
+
+===========================
+Основна різниця:
+===========================
+TCP — встановлює надійне з’єднання перед передачею даних.  
+UDP — одразу надсилає пакети, не перевіряючи доставку.
+
+
+========================================================
+04_Mail_Protocols_SMTP
+
+SMTP (англ. Simple Mail Transfer Protocol) — це протокол передачі електронної пошти, який використовується для надсилання та отримання повідомлень електронної пошти в мережах TCP/IP. Він працює як «поштальйон», передаючи листи від одного поштового сервера до іншого. Для отримання листів клієнтські програми зазвичай використовують протоколи IMAP або POP3, а SMTP використовується лише для відправки. 
+
+
+SMTP - відправка з девайса на свій сервер і далі до сервера отримувача
+
+POP3/IMAP  - отримання отримувачем з його сервера
+
+
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Net.Sockets;
+using System.Windows.Forms;
+
+namespace MailSender
+{
+    public partial class Form1 : Form
+    {
+        string server= "smtp.gmail.com"; // sets the server address
+        int port = 587;                  // int.Parse(ConfigurationManager.AppSettings["gmail_port"]); //sets the server port
+
+        const string username = "lenailyshun@gmail.com";
+
+        const string password = "dqmq yyqu uxfb ikfc";
+
+        public Form1()
+        {
+            InitializeComponent();
+
+            fromBox.Text = username;
+        }
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            // GMAIL - Allow less secure apps
+            // old - https://myaccount.google.com/lesssecureapps?pli=1&rapt=AEjHL4MTRm8bMK7-4VvaGO5Ks_mRsfnKW3N7IHVwRioBJMo2SXMcP350EgzMWE8DHhVYavXsrIzpnmTjyDNROWK-Cojf4q1Qjg
+            // new - https://stackoverflow.com/questions/72547853/unable-to-send-email-in-c-sharp-less-secure-app-access-not-longer-available
+            
+            // create a message object
+            MailMessage message = new MailMessage(fromBox.Text, toBox.Text, themeBox.Text, bodyBox.Text);
+
+            
+            //// send HTML body
+            using (StreamReader sr = new StreamReader("mail.html"))
+            {
+                message.Body = sr.ReadToEnd();
+            }
+            message.IsBodyHtml = true;
+            
+
+            message.Priority = MailPriority.High; // important))
+          
+            message.Attachments.Add(new Attachment(@"Files/text.txt"));
+            message.Attachments.Add(new Attachment(@"Files/nuts.jpg"));
+         
+            // create a send object
+            SmtpClient client = new SmtpClient(server, port);
+            client.EnableSsl = true;
+
+            // settings for sending mail
+            client.Credentials = new NetworkCredential(username, password);
+
+     
+            client.SendCompleted  += Client_SendCompleted;
+            // call asynchronous message sending
+            client.SendAsync(message, message );
+
+          
+        }
+
+        private void Client_SendCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+           
+            var state = (MailMessage)e.UserState;
+           
+            MessageBox.Show($"Message was sent! Subject: {state.Subject}!");
+            //MessageBox.Show($"Message was sent! Subject: {e.UserState.ToString()}!");
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // here you need to add a file selection dialog box and add the selected file to the MailMessage
+            // attachment collection and to the list on the form
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            // here you need to clear all fields of the form and the content of the MailMessage object
+        }
+    }
+}
+
+
+_04_Mail_Client.LoginWindow
+_04_Mail_Client.MainWindow
