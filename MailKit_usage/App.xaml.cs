@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace MailWindow
+namespace MailKit_usage
 {
     /// <summary>
     /// Interaction logic for App.xaml

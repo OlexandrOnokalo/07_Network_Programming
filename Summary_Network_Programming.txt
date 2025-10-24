@@ -6243,3 +6243,47 @@ namespace MailSender
 
 _04_Mail_Client.LoginWindow
 _04_Mail_Client.MainWindow
+
+
+========================================================
+
+IMAP HTPP Protocol
+
+IMAP (Internet Message Access Protocol) — це протокол доступу до електронної пошти, який дозволяє користувачам переглядати та керувати повідомленнями на віддаленому сервері
+
+Встановлюємо NuGet Пакет MailKit і MimeKit
+
+SMTP клієнт від MailKit і MimeKit
+
+IMAP - Для того щоб втягнути з сервера на пк.
+
+
+
+
+folder = client.Getfolder(SpecialFolder.Sent….
+folder.Search(SearchQueqy.All
+folder.AddFlags(id,MessageFlags.Deleted.
+folder.Expunge()
+
+зліва папки, справа листи
+Повноцінний поштовий клієнт
+
+
+HTTP — протокол передачі даних, що використовується в комп'ютерних мережах. Назва скорочена від Hypertext Transfer Protocol, протокол передачі гіпертекстових документів (сайти, веб додатки)
+
+HTTP належить до протоколів моделі OSI 7-го прикладного рівня.
+
+Основним призначенням протоколу HTTP є передача вебсторінок (текстових файлів з розміткою HTML, зображень та застосунків), проте за його допомогою успішно передаються й інші файли (в цьому плані HTTP складає конкуренцію складнішому FTP).
+
+
+
+
+
+
+MailKit_usage
+
+lenailyshun@gmail.com
+dqmq yyqu uxfb ikfc
+
+
+
