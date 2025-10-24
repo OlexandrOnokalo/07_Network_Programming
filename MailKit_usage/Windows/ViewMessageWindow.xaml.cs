@@ -2,7 +2,6 @@
 using System.Windows;
 using MailKit;
 using MailKit_usage.Helpers;
-using MailKit_usage.Services;
 using MimeKit;
 
 namespace MailKit_usage.Windows

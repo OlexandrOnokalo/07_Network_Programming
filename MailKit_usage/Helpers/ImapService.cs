@@ -9,7 +9,7 @@ using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
 
-namespace MailKit_usage.Services
+namespace MailKit_usage.Helpers
 {
     public class ImapService : IAsyncDisposable
     {
@@ -114,14 +114,14 @@ namespace MailKit_usage.Services
         public static (int start, int end) GetPageRange(int totalCount, int pageIndex, int pageSize)
         {
 
-            var end = totalCount - (pageIndex * pageSize) - 1;
+            var end = totalCount - pageIndex * pageSize - 1;
             var start = Math.Max(0, end - (pageSize - 1));
             if (end < 0) return (0, -1);
             return (start, end);
         }
 
 
-        public async Task<IList<MailKit_usage.Models.EmailItem>> GetPageAsync(
+        public async Task<IList<Models.EmailItem>> GetPageAsync(
             IMailFolder folder, int pageIndex, int pageSize, CancellationToken ct = default)
         {
             if (!folder.IsOpen)
@@ -129,7 +129,7 @@ namespace MailKit_usage.Services
 
             int total = folder.Count;
             var (start, end) = GetPageRange(total, pageIndex, pageSize);
-            if (end < start) return new List<MailKit_usage.Models.EmailItem>();
+            if (end < start) return new List<Models.EmailItem>();
 
 
             var summaries = await folder.FetchAsync(start, end,
@@ -140,7 +140,7 @@ namespace MailKit_usage.Services
 
             var items = summaries
                 .OrderByDescending(s => s.Index)
-                .Select(s => new MailKit_usage.Models.EmailItem
+                .Select(s => new Models.EmailItem
                 {
                     UniqueId = s.UniqueId,
                     From = s.Envelope.From?.ToString() ?? "",

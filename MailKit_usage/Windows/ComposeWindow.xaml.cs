@@ -4,10 +4,10 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
-using MailKit_usage.Helpers;
-using MailKit_usage.Services;
 using MimeKit;
 using System.Windows.Input;
+using MailKit_usage.Models;
+using MailKit_usage.Helpers;
 
 namespace MailKit_usage.Windows
 {

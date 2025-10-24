@@ -4,7 +4,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 
-namespace MailKit_usage.Services
+namespace MailKit_usage.Helpers
 {
     public static class SmtpService
     {

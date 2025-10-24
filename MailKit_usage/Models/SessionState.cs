@@ -1,4 +1,4 @@
-namespace MailKit_usage.Helpers
+namespace MailKit_usage.Models
 {
     public static class SessionState
     {

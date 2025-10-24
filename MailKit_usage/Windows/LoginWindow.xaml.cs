@@ -1,5 +1,5 @@
 ﻿using MailKit;
-using MailKit_usage.Helpers;
+using MailKit_usage.Models;
 using MailKit_usage.Services;
 using System;
 using System.Threading.Tasks;
