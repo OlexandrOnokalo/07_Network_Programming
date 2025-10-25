@@ -23,6 +23,6 @@
         <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Login" Height="34" Click="BtnLogin_Click"/>
 
         <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Margin="0,8,0,0" TextWrapping="Wrap"
-                   Text="Hint: Fields are prefilled for testing. You can edit them to test failed login."/>
+                   Text="Fields are prefilled for testing."/>
     </Grid>
 </Window>
