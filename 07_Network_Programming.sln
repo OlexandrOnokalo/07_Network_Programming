@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "04_Mail_Client", "04_Mail_C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailKit_usage", "MailKit_usage\MailKit_usage.csproj", "{97C35C27-8396-401C-B848-084D9CA1A2B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mark_as_read", "mark_as_read\mark_as_read.csproj", "{A1BCC432-AC08-46DC-98BE-3DA81F1F0552}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{97C35C27-8396-401C-B848-084D9CA1A2B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97C35C27-8396-401C-B848-084D9CA1A2B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97C35C27-8396-401C-B848-084D9CA1A2B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1BCC432-AC08-46DC-98BE-3DA81F1F0552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1BCC432-AC08-46DC-98BE-3DA81F1F0552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1BCC432-AC08-46DC-98BE-3DA81F1F0552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1BCC432-AC08-46DC-98BE-3DA81F1F0552}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
